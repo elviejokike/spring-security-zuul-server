@@ -6,20 +6,20 @@ import org.springframework.stereotype.Component
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-interface SessionHandler {
+interface AuthSessionHandler {
 
-    fun handleSusccesfullAuthentication(request: HttpServletRequest, response: HttpServletResponse, oauthToken: OAuth2AccessToken);
-    fun handleUnSusccesfullAuthentication(request: HttpServletRequest, response: HttpServletResponse);
+    fun handleSuccessfulAuthentication(request: HttpServletRequest, response: HttpServletResponse, oauthToken: OAuth2AccessToken);
+    fun handleUnsuccessfulAuthentication(request: HttpServletRequest, response: HttpServletResponse);
     fun handleRequest(request: HttpServletRequest, response: HttpServletResponse): String;
 
 }
 @Component
-class CookieBasedSessionHandler: SessionHandler {
+class CookieBasedAuthSessionHandler: AuthSessionHandler {
 
     var hpCookieSerializer: DefaultCookieSerializer = DefaultCookieSerializer("SHPID", false, false)
     var sigCookieSerializer: DefaultCookieSerializer = DefaultCookieSerializer("SSIGID", true, false);
 
-    override fun handleSusccesfullAuthentication(request: HttpServletRequest, response: HttpServletResponse, oauthToken: OAuth2AccessToken){
+    override fun handleSuccessfulAuthentication(request: HttpServletRequest, response: HttpServletResponse, oauthToken: OAuth2AccessToken){
 
         var jwtParts = oauthToken.access_token.split(".");
 
@@ -32,7 +32,7 @@ class CookieBasedSessionHandler: SessionHandler {
         sigCookieSerializer.writeCookieValue(sigCookieValue);
     }
 
-    override fun handleUnSusccesfullAuthentication(request: HttpServletRequest, response: HttpServletResponse){
+    override fun handleUnsuccessfulAuthentication(request: HttpServletRequest, response: HttpServletResponse){
 
     }
 

@@ -46,7 +46,7 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
     var gson = Gson();
 
     @Autowired
-    lateinit  var sessionHandler:SessionHandler;
+    lateinit  var authSessionHandler:AuthSessionHandler;
 
     override fun run(): Any {
 
@@ -57,7 +57,7 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
             val body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
             val oauthToken = gson?.fromJson(body, OAuth2AccessToken::class.java)
 
-            this.sessionHandler.handleSusccesfullAuthentication(context.request, context.response, oauthToken);
+            this.authSessionHandler.handleSuccessfulAuthentication(context.request, context.response, oauthToken);
             context.responseBody = "{}";
         }
 
@@ -81,7 +81,7 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
 @Component
 class ServiceAuthenticationFilter: ZuulFilter() {
     @Autowired
-    lateinit  var sessionHandler:SessionHandler;
+    lateinit  var authSessionHandler:AuthSessionHandler;
 
     override fun shouldFilter(): Boolean {
         var context = RequestContext.getCurrentContext();
@@ -99,7 +99,7 @@ class ServiceAuthenticationFilter: ZuulFilter() {
     override fun run(): Any {
         val context = RequestContext.getCurrentContext()
         try {
-            val accessToken = sessionHandler.handleRequest(context.request, context.response)
+            val accessToken = authSessionHandler.handleRequest(context.request, context.response)
             context.addZuulRequestHeader("Authorization", "Bearer $accessToken");
         } catch (e:InvalidSession){
             context.responseStatusCode = 401
