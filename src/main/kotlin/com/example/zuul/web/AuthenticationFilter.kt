@@ -1,10 +1,9 @@
 package com.example.zuul.web
 
-import com.example.zuul.web.util.CookieSerializer
-import com.example.zuul.web.util.DefaultCookieSerializer
 import com.google.gson.Gson
 import com.netflix.zuul.ZuulFilter
 import com.netflix.zuul.context.RequestContext
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants.*
 import org.springframework.stereotype.Component
 import org.springframework.util.StreamUtils
@@ -44,8 +43,10 @@ class AuthenticationFilter: ZuulFilter() {
 @Component
 class PostSuscessfulAuthenticationFilter : ZuulFilter() {
 
-    var gson = Gson()
-    var cookieSerializer:CookieSerializer = DefaultCookieSerializer();
+    var gson = Gson();
+
+    @Autowired
+    lateinit  var sessionHandler:SessionHandler;
 
     override fun run(): Any {
 
@@ -56,11 +57,8 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
             val body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
             val oauthToken = gson?.fromJson(body, OAuth2AccessToken::class.java)
 
+            this.sessionHandler.handleSusccesfullAuthentication(context.request, context.response, oauthToken);
             context.responseBody = "{}";
-            val cookieValue = CookieSerializer.CookieValue(context.request, context.response, oauthToken.access_token);
-            cookieValue.cookieMaxAge = oauthToken.expires_in;
-            this.cookieSerializer.writeCookieValue(cookieValue);
-
         }
 
         return Any()
@@ -82,9 +80,8 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
 
 @Component
 class ServiceAuthenticationFilter: ZuulFilter() {
-
-    var cookieSerializer: CookieSerializer = DefaultCookieSerializer();
-
+    @Autowired
+    lateinit  var sessionHandler:SessionHandler;
 
     override fun shouldFilter(): Boolean {
         var context = RequestContext.getCurrentContext();
@@ -101,18 +98,17 @@ class ServiceAuthenticationFilter: ZuulFilter() {
 
     override fun run(): Any {
         val context = RequestContext.getCurrentContext()
-        var cookies = cookieSerializer.readCookieValues(context.request)
-        if (cookies == null || cookies.size == 0) {
+        try {
+            val accessToken = sessionHandler.handleRequest(context.request, context.response)
+            context.addZuulRequestHeader("Authorization", "Bearer $accessToken");
+        } catch (e:InvalidSession){
             context.responseStatusCode = 401
             context.sendZuulResponse()
-            return Any();
         }
-        var auth = cookies.get(0)
-
-        context.addZuulRequestHeader("Authorization", "Bearer " + auth);
-
-        return Any()
+        return Any();
     }
+}
 
+class InvalidSession : Throwable() {
 
 }

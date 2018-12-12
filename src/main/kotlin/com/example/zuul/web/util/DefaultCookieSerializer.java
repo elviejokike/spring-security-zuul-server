@@ -55,6 +55,20 @@ public class DefaultCookieSerializer implements CookieSerializer {
 
 	private String sameSite = "Lax";
 
+	public DefaultCookieSerializer(){
+
+	}
+
+	public DefaultCookieSerializer(String cookieName){
+		this.cookieName = cookieName;
+	}
+
+	public DefaultCookieSerializer(String cookieName, boolean httpOnly, boolean secure){
+		this.cookieName = cookieName;
+		this.useHttpOnlyCookie = httpOnly;
+		this.useSecureCookie = secure;
+	}
+
 	@Override
 	public List<String> readCookieValues(HttpServletRequest request) {
 		Cookie[] cookies = request.getCookies();
