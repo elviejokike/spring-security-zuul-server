@@ -1,0 +1,54 @@
+server:
+  port: ${PORT:8765}
+
+management:
+  server:
+    add-application-context-header: false
+
+spring:
+  mvc:
+    favicon:
+      enabled: false
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
+
+
+zuul:
+  ignoredServices: "*"
+  ignored-patterns:
+  routes: # ORDER MATTERS!!!
+    iam:
+      path: /iam/**
+      serviceId: iam-service
+      stripPrefix: true
+      sensitiveHeaders: Cookie,Set-Cookie
+    auth:
+      path: /auth
+      serviceId: iam-service
+      stripPrefix: false
+      sensitiveHeaders: Cookie,Set-Cookie
+    service:
+      path: /services/**
+      serviceId: a-service
+      stripPrefix: true
+      sensitiveHeaders: Cookie,Set-Cookie
+
+iam-service:
+  ribbon:
+    listOfServers: ${IAM_URL:http://localhost:8888/}
+    NIWSServerListClassName: com.netflix.loadbalancer.ConfigurationBasedServerList
+    ConnectTimeout: 1000
+    ReadTimeout: 3000
+    MaxTotalHttpConnections: 500
+    MaxConnectionsPerHost: 100
+
+a-service:
+  ribbon:
+    listOfServers: ${IAM_URL:http://localhost:8888/}
+    NIWSServerListClassName: com.netflix.loadbalancer.ConfigurationBasedServerList
+    ConnectTimeout: 1000
+    ReadTimeout: 3000
+    MaxTotalHttpConnections: 500
+    MaxConnectionsPerHost: 100
