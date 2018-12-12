@@ -16,9 +16,12 @@ import javax.servlet.http.HttpServletResponse
 @Component
 class AuthenticationFilter: ZuulFilter() {
 
+    @Autowired
+    lateinit var authConfiguration: AuthConfiguration;
+
     override fun shouldFilter(): Boolean {
         var context = RequestContext.getCurrentContext();
-        return ("/auth".equals(context.get("requestURI")))
+        return (authConfiguration.authPath.equals(context.get("requestURI")))
     }
 
     override fun filterType(): String {
@@ -32,7 +35,7 @@ class AuthenticationFilter: ZuulFilter() {
     override fun run(): Any {
 
         val context = RequestContext.getCurrentContext()
-        context.addZuulRequestHeader("Authorization", "Basic ZGVmYXVsdC1jbGllbnQ6c2VjcmV0");
+        context.addZuulRequestHeader("Authorization", authConfiguration.grantTypeAuthorization);
         context.put(REQUEST_URI_KEY, "/oauth/token");
 
         return Any()
@@ -47,6 +50,9 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
 
     @Autowired
     lateinit  var authSessionHandler:AuthSessionHandler;
+
+    @Autowired
+    lateinit var authConfiguration: AuthConfiguration;
 
     override fun run(): Any {
 
@@ -66,7 +72,7 @@ class PostSuscessfulAuthenticationFilter : ZuulFilter() {
 
     override fun shouldFilter(): Boolean {
         var context = RequestContext.getCurrentContext();
-        return context.request.requestURI.toString().startsWith  ("/auth")
+        return context.request.requestURI.toString().startsWith  (authConfiguration.authPath)
     }
 
     override fun filterType(): String {
@@ -83,9 +89,12 @@ class ServiceAuthenticationFilter: ZuulFilter() {
     @Autowired
     lateinit  var authSessionHandler:AuthSessionHandler;
 
+    @Autowired
+    lateinit var authConfiguration: AuthConfiguration;
+
     override fun shouldFilter(): Boolean {
         var context = RequestContext.getCurrentContext();
-        return context.request.requestURI.toString().startsWith  ("/services")
+        return context.request.requestURI.toString().startsWith  (authConfiguration.servicesPath)
     }
 
     override fun filterOrder(): Int {
